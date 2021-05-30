@@ -168,7 +168,7 @@ void work_loop(unsigned int idx, unsigned int begin, unsigned int end) {
 int main() {
     // Local variables
     time_t t;
-    unsigned int thread_idx;
+    unsigned int thread_idx, frame_calc = 0;
     Uint32 start_time, frame_time;
     bool run = true;
     float fps;
@@ -198,8 +198,8 @@ int main() {
         threads[thread_idx] = std::thread(work_loop, thread_idx, begin, end);
     }
 
+    start_time = SDL_GetTicks();
     while (run) {
-        start_time = SDL_GetTicks();
 
         // Copy existing states to a buffer for parallel processing
         memcpy(alive_states_last, alive_states, N_CELLS);
@@ -214,14 +214,22 @@ int main() {
         // SDL related drawing, FPS counting and event handling comes here
         SDL_UpdateWindowSurface(window);
 
-        frame_time = SDL_GetTicks() - start_time;
-        fps = (frame_time > 0) ? 1000.0 / frame_time : 0.0;
-        printf("%f\n", fps);
+
 
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT || ((e.type == SDL_KEYDOWN) &&
                                        (e.key.keysym.sym == SDLK_ESCAPE)))
                 run = false;
+        }
+
+        ++frame_calc;
+        if (frame_calc == 100) {
+            frame_time = SDL_GetTicks() - start_time;
+            frame_time /= 100;
+            fps = (frame_time > 0) ? 1000.0 / frame_time : 0.0;
+            printf("FPS over 100 frames: %f\n", fps);
+            frame_calc = 0;
+            start_time = SDL_GetTicks();
         }
     }
 
