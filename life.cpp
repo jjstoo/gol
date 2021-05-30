@@ -2,20 +2,28 @@
 #include <time.h>
 #include <SDL2/SDL.h>
 
+// Define simulation area size here
+// Todo: resolution independent simulations
 #define WIN_H_REF 1080
 #define WIN_W_REF 1920
-#define SPARCITY 2
 #define N_CELLS WIN_H_REF * WIN_W_REF
+
+// This controls the randomized population sparcity
+#define SPARCITY 5
+
+// Most optimal solutions is usually the amount of physical cpu threads
 #define N_THREADS 8
 
+// SDL related graphical contexts
 static SDL_Window* window = NULL;
 static SDL_Surface* surface = NULL;
 int* pixels = NULL;
 
+// Store these as separate arrays for optimal memcpy()
 bool* alive_states;
 bool* alive_states_last;
 
-// Cell representation
+// Cell representation. State is not stored inside the struct.
 struct Cell {
     unsigned int idx;
     SDL_Point pos;
@@ -68,6 +76,9 @@ inline int get_val_at(int x, int y, int* data) {
     return data[WIN_W_REF * y + x];
 }
 
+inline void paint(int x, int y) {
+    alive_states[get_cell_at(x, y)->idx] = true;
+}
 
 /**
  * @brief Initializes cells to random states
@@ -168,9 +179,10 @@ void work_loop(unsigned int idx, unsigned int begin, unsigned int end) {
 int main() {
     // Local variables
     time_t t;
+    int mouse_x, mouse_y;
     unsigned int thread_idx, frame_calc = 0;
     Uint32 start_time, frame_time;
-    bool run = true;
+    bool run = true, drawing = false;
     float fps;
     SDL_Event e;
 
@@ -218,6 +230,21 @@ int main() {
             if (e.type == SDL_QUIT || ((e.type == SDL_KEYDOWN) &&
                                        (e.key.keysym.sym == SDLK_ESCAPE)))
                 run = false;
+
+            if (e.type == SDL_MOUSEBUTTONDOWN) {
+                drawing = true;
+            } else if (e.type == SDL_MOUSEBUTTONUP) {
+                drawing = false;
+            }
+        }
+
+        if (drawing) {
+            SDL_GetMouseState(&mouse_x, &mouse_y);
+            paint(mouse_x, mouse_y);
+            paint(mouse_x-1, mouse_y);
+            paint(mouse_x+1, mouse_y);
+            paint(mouse_x, mouse_y-1);
+            paint(mouse_x, mouse_y+1);
         }
 
         ++frame_calc;
