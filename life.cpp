@@ -214,8 +214,6 @@ int main() {
         // SDL related drawing, FPS counting and event handling comes here
         SDL_UpdateWindowSurface(window);
 
-
-
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT || ((e.type == SDL_KEYDOWN) &&
                                        (e.key.keysym.sym == SDLK_ESCAPE)))
